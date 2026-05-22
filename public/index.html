@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#1a73e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>SMANSA Navigator — SMA Negeri 1 Tuban</title>
+<title>Denah Digital SMA Negeri 1 Tuban</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -242,7 +242,6 @@
     font-weight: 600; font-size: 14px;
   }
   #mode-banner.open { display: flex; }
-  #mode-banner.evac { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
   #mode-banner.event { background: #e8f5e9; color: #1b5e20; border: 2px solid #a5d6a7; }
   #mode-banner-close { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 18px; color: inherit; }
 
@@ -254,7 +253,6 @@
     display: flex; flex-direction: column; align-items: center;
   }
   .room-marker-pin .event-tag { color: var(--orange); font-size: 9px; line-height: 1.2; }
-  .marker-emergency { border-color: var(--red) !important; color: var(--red) !important; background: #fff8f8 !important; }
   .route-node { width: 12px; height: 12px; border-radius: 50%; background: var(--blue); border: 2px solid #fff; box-shadow: var(--shadow); }
 
   /* ─── FLOOR MODAL ─────────────────────────────────────── */
@@ -297,17 +295,6 @@
     opacity: 0; transition: all .3s; pointer-events: none; white-space: nowrap;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* ─── EMERGENCY BUTTON ────────────────────────────────── */
-  #emergency-btn {
-    position: fixed; left: 12px; z-index: 90;
-    bottom: calc(var(--bottom-nav-h) + 80px);
-    background: var(--red); color: #fff; border: none; border-radius: var(--radius);
-    padding: 10px 14px; font-family: var(--font); font-size: 12px; font-weight: 700;
-    cursor: pointer; box-shadow: var(--shadow-lg); display: flex; align-items: center;
-    gap: 6px; letter-spacing: .3px; transition: all .2s;
-  }
-  #emergency-btn:hover { background: #c62828; transform: scale(1.05); }
 
   @media (max-width: 380px) {
     .room-marker-pin { font-size: 9px; padding: 2px 4px; }
@@ -381,9 +368,6 @@
   <button id="mode-banner-close" onclick="closeBanner()">✕</button>
 </div>
 
-<!-- Emergency Button -->
-<button id="emergency-btn" onclick="activateEvacMode()"> Jalur Evakuasi</button>
-
 <!-- FAB Cluster -->
 <div id="fab-cluster">
   <button class="fab fab-white" id="locate-fab" title="Atur posisi saya" onclick="openLocateSheet()">📍</button>
@@ -399,10 +383,6 @@
   <button class="nav-item" onclick="switchTab('search')">
     <span class="nav-icon">🔍</span>
     <span class="nav-label">Cari</span>
-  </button>
-  <button class="nav-item" onclick="switchTab('event')">
-    <span class="nav-icon">🎉</span>
-    <span class="nav-label">Event</span>
   </button>
 </div>
 
@@ -791,23 +771,15 @@ const GRAPH = buildGraph();
 // ═══════════════════════════════════════════════════════
 let map, currentFloor = 1, markers = {}, routeLayer = null;
 let selectedRoom = null, myPosition = null;
-let events = []; // Dimuat dari /data/events.json via fetch
-let navOpen = false, currentMode = null;
-let activeNavItems = document.querySelectorAll('.nav-item');
+let events = [
+  { "roomId": "aula", "label": "Pembukaan MPLS", "icon": "🎭" },
+  { "roomId": "lab-kom1", "label": "Lomba Coding", "icon": "💻" },
+  { "roomId": "xi-a", "label": "Lomba Menyanyi", "icon": "🎤" }
+];
+// ⚙️  Edit array di atas untuk mengubah event — lalu commit ke GitHub.
 
-// ═══════════════════════════════════════════════════════
-//  LOAD EVENTS dari /data/events.json (dikonfigurasi via GitHub)
-// ═══════════════════════════════════════════════════════
-async function loadEvents() {
-  try {
-    const res = await fetch('/data/events.json');
-    if (!res.ok) throw new Error('events.json not found');
-    events = await res.json();
-  } catch (e) {
-    console.warn('Gagal memuat events.json, menggunakan data kosong.', e);
-    events = [];
-  }
-}
+let navOpen = false, currentMode = 'event'; // Mode event selalu aktif
+let activeNavItems = document.querySelectorAll('.nav-item');
 
 // ═══════════════════════════════════════════════════════
 //  MAP BOUNDS — tight box around SMANSA (~200×200m)
@@ -910,8 +882,6 @@ function preloadSchoolTiles(tileLayer) {
 // ═══════════════════════════════════════════════════════
 function makeIcon(room, id) {
   const ev = events.find(e => e.roomId === id);
-  const isEvac = currentMode === 'evac';
-  const extraCls = isEvac && room.type !== 'gate' ? ' marker-emergency' : '';
   let html = `<div class="room-marker-pin${extraCls}" style="border-color:${isEvac ? '#ea4335' : room.color}; color:${isEvac ? '#ea4335' : room.color}">
     ${room.icon} ${room.name.length > 12 ? room.name.substring(0,12)+'…' : room.name}
     ${ev ? `<div class="event-tag">${ev.icon} ${ev.label}</div>` : ''}
@@ -1333,25 +1303,6 @@ function confirmPosition(id) {
   closeBottomSheet();
 }
 
-// ═══════════════════════════════════════════════════════
-//  MODES: EVAC & EVENT
-// ═══════════════════════════════════════════════════════
-function activateEvacMode() {
-  currentMode = currentMode === 'evac' ? null : 'evac';
-  const banner = document.getElementById('mode-banner');
-  if (currentMode === 'evac') {
-    banner.className = 'open evac';
-    document.getElementById('mode-icon').textContent = '⚠️';
-    document.getElementById('mode-text').textContent = 'MODE EVAKUASI DARURAT — Ikuti jalur menuju Gerbang';
-    showToast('⚠️ Mode evakuasi aktif');
-    // Highlight gates
-    highlightRoom('gerbang-barat');
-  } else {
-    banner.className = '';
-    showToast('Mode normal diaktifkan');
-  }
-  renderAllMarkers();
-}
 
 function activateEventMode() {
   currentMode = currentMode === 'event' ? null : 'event';
@@ -1377,38 +1328,12 @@ function closeBanner() {
 // ═══════════════════════════════════════════════════════
 function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach((el, i) => {
-    const tabs = ['map','search','event'];
+    const tabs = ['map','search'];
     el.classList.toggle('active', tabs[i] === tab);
   });
-
   closeBottomSheet();
   hideNavPanel();
-
-  if (tab === 'search') {
-    searchInput.focus();
-  } else if (tab === 'event') {
-    const sheetContent = document.getElementById('sheet-content');
-    const evRooms = events.map(ev => {
-      const r = ROOMS[ev.roomId];
-      return r ? `<div class="event-item" onclick="openRoomDetail('${ev.roomId}')">
-        <div class="event-item-icon">${ev.icon}</div>
-        <div class="event-item-info">
-          <div class="event-item-room">${r.name} · Lantai ${r.floor}</div>
-          <div class="event-item-label">${ev.label}</div>
-        </div>
-        <div style="font-size:11px;color:var(--blue)">Buka →</div>
-      </div>` : '';
-    }).join('');
-    sheetContent.innerHTML = `
-      <div class="sheet-title">🎉 Event Hari Ini</div>
-      <div class="sheet-subtitle">Ketuk event untuk melihat lokasi di peta</div>
-      ${evRooms || '<div style="color:var(--text2);font-size:14px;padding:8px 0">Belum ada event aktif.</div>'}
-      <button style="margin-top:14px;width:100%;padding:12px;background:var(--blue-light);color:var(--blue);border:1.5px solid var(--blue);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)" onclick="activateEventMode()">
-        ${currentMode==='event'?'✅ Mode Event Aktif — Nonaktifkan':'🎉 Aktifkan Mode Event'}
-      </button>
-    `;
-    openBottomSheet();
-  }
+  if (tab === 'search') searchInput.focus();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1453,21 +1378,14 @@ self.addEventListener('fetch', e => {
   const swUrl = URL.createObjectURL(blob);
   navigator.serviceWorker.register(swUrl, { scope: '/' }).catch(() => {});
 }
-window.addEventListener('load', async () => {
+window.addEventListener('load', () => {
   const loadingMsg = document.getElementById('loading-msg');
   const loadingBar = document.getElementById('loading-bar');
 
-  // Step 1 — muat events dari /data/events.json
-  loadingMsg.textContent = 'Memuat data event…';
-  loadingBar.style.width = '10%';
-  await loadEvents();
-
-  // Step 2 — init map & markers (instant)
   loadingMsg.textContent = 'Inisialisasi peta…';
-  loadingBar.style.width = '25%';
+  loadingBar.style.width = '20%';
   initMap();
 
-  // Step 3 — wait for Leaflet's first tile batch to load
   loadingMsg.textContent = 'Mengunduh tile peta…';
   loadingBar.style.width = '50%';
 
