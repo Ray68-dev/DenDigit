@@ -242,6 +242,7 @@
     font-weight: 600; font-size: 14px;
   }
   #mode-banner.open { display: flex; }
+  #mode-banner.evac { background: #ffebee; color: #c62828; border: 2px solid #ef9a9a; }
   #mode-banner.event { background: #e8f5e9; color: #1b5e20; border: 2px solid #a5d6a7; }
   #mode-banner-close { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 18px; color: inherit; }
 
@@ -295,6 +296,8 @@
     opacity: 0; transition: all .3s; pointer-events: none; white-space: nowrap;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ─── EMERGENCY BUTTON ────────────────────────────────── */
 
   @media (max-width: 380px) {
     .room-marker-pin { font-size: 9px; padding: 2px 4px; }
@@ -368,6 +371,7 @@
   <button id="mode-banner-close" onclick="closeBanner()">✕</button>
 </div>
 
+<!-- Emergency Button -->
 <!-- FAB Cluster -->
 <div id="fab-cluster">
   <button class="fab fab-white" id="locate-fab" title="Atur posisi saya" onclick="openLocateSheet()">📍</button>
@@ -882,7 +886,7 @@ function preloadSchoolTiles(tileLayer) {
 // ═══════════════════════════════════════════════════════
 function makeIcon(room, id) {
   const ev = events.find(e => e.roomId === id);
-  let html = `<div class="room-marker-pin${extraCls}" style="border-color:${isEvac ? '#ea4335' : room.color}; color:${isEvac ? '#ea4335' : room.color}">
+  let html = `<div class="room-marker-pin" style="border-color:${room.color}; color:${room.color}">
     ${room.icon} ${room.name.length > 12 ? room.name.substring(0,12)+'…' : room.name}
     ${ev ? `<div class="event-tag">${ev.icon} ${ev.label}</div>` : ''}
   </div>`;
@@ -1303,7 +1307,9 @@ function confirmPosition(id) {
   closeBottomSheet();
 }
 
-
+// ═══════════════════════════════════════════════════════
+//  MODES: EVAC & EVENT
+// ═══════════════════════════════════════════════════════
 function activateEventMode() {
   currentMode = currentMode === 'event' ? null : 'event';
   const banner = document.getElementById('mode-banner');
