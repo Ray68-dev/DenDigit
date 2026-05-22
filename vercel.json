@@ -1,15 +1,4 @@
 {
   "version": 2,
-  "buildCommand": null,
-  "outputDirectory": "public",
-  "routes": [
-    {
-      "src": "/data/(.*)",
-      "dest": "/data/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    }
-  ]
+  "outputDirectory": "public"
 }
