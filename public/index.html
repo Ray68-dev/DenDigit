@@ -776,13 +776,13 @@ const GRAPH = buildGraph();
 let map, currentFloor = 1, markers = {}, routeLayer = null;
 let selectedRoom = null, myPosition = null;
 let events = [
-  { "roomId": "aula", "label": "Pembukaan MPLS", "icon": "🎭" },
-  { "roomId": "lab-kom1", "label": "Lomba Coding", "icon": "💻" },
-  { "roomId": "xi-a", "label": "Lomba Menyanyi", "icon": "🎤" }
+  { "roomId": "aula", "label": "Pembukaan Lomba", "icon": "🎭" },
+  { "roomId": "lab-kom1", "label": "Olimpiade MIPA", "icon": "💻" },
+  { "roomId": "r-musik", "label": "Menyanyi Solo", "icon": "🎤" },
+  { "roomId": "xii-a", "label": "Baca Puisi", "icon": "🎤" }
 ];
-// ⚙️  Edit array di atas untuk mengubah event — lalu commit ke GitHub.
 
-let navOpen = false, currentMode = 'event'; // Mode event selalu aktif
+let navOpen = false, currentMode = 'event';
 let activeNavItems = document.querySelectorAll('.nav-item');
 
 // ═══════════════════════════════════════════════════════
